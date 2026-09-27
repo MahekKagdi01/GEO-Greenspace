@@ -1,0 +1,339 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard — GreenScape AI</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0B5D3B',
+                        secondary: '#1FA774',
+                        accent: '#B7E778',
+                        'background-light': '#F6F8F7',
+                        'background-dark': '#050707',
+                    },
+                    fontFamily: {
+                        'inter-bold': ['Inter', 'sans-serif'],
+                        'manrope': ['Manrope', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Heatmap -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Manrope:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <!-- Global Background System -->
+    <link rel="stylesheet" href="assets/css/background.css">
+
+    <style>
+        #map, #compact-map {
+            height: 480px;
+            width: 100%;
+            border-radius: 20px;
+        }
+
+        /* Chart Wrapper to ensure stable dimensions for Chart.js */
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+        
+        /* ===== GLASS SIDEBAR STYLES ===== */
+        .glass-sidebar {
+            background: rgba(2, 6, 23, 0.6) !important;
+            backdrop-filter: blur(18px) !important;
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 20px !important;
+            box-shadow: inset 0 0 20px rgba(31, 167, 116, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            margin: 20px !important;
+            height: calc(100vh - 40px) !important;
+        }
+
+        /* Sidebar Menu Item */
+        .sidebar-item {
+            position: relative;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7) !important;
+            border-radius: 14px !important;
+            overflow: hidden;
+            transition: all 0.3s ease !important;
+        }
+
+        /* Hover Effect */
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+            color: #ffffff !important;
+        }
+
+        /* Micro-interactions */
+        .sidebar-item .item-icon {
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+        .sidebar-item .item-text {
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+        .sidebar-item:hover .item-icon {
+            transform: scale(1.15);
+        }
+        .sidebar-item:hover .item-text {
+            transform: translateX(4px);
+        }
+
+        /* Active Item */
+        .sidebar-link-active {
+            background: linear-gradient(135deg, #1FA774, #0B5D3B) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 20px rgba(31, 167, 116, 0.5) !important;
+            transform: scale(1.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item.sidebar-link-active:hover {
+            transform: scale(1.03);
+            background: linear-gradient(135deg, #22C55E, #1FA774) !important;
+            box-shadow: 0 0 25px rgba(31, 167, 116, 0.6) !important;
+        }
+
+        /* Click Ripple/Pulse */
+        .sidebar-item:active {
+            transform: scale(0.98) !important;
+        }
+
+        /* Entry Animations */
+        @keyframes slideFadeIn {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        
+        .animate-sidebar-item {
+            animation: slideFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+    </style>
+</head>
+
+<body class="bg-background-light text-gray-800 font-manrope dark:bg-background-dark dark:text-gray-200">
+
+    <!-- ╔══════════════════════════════════════════════════
+         ║  GLOBAL BACKGROUND SYSTEM — GreenScape AI
+         ║  Copy this exact block to every page
+         ╚══════════════════════════════════════════════════ -->
+
+    <!-- 1. Looping Earth Video -->
+    <video id="gs-bg-video"
+           autoplay muted loop playsinline
+           poster="assets/images/earth-poster.jpg">
+        <source src="assets/video/earth.mp4" type="video/mp4">
+    </video>
+
+    <!-- 2. Dark gradient overlay (improves text readability) -->
+    <div id="gs-bg-overlay" aria-hidden="true"></div>
+
+    <!-- 3. Animated gradient flow (subtle green tones) -->
+    <div id="gs-bg-gradient-flow" aria-hidden="true"></div>
+
+    <!-- 4. Floating particles container (populated by background.js) -->
+    <div id="gs-particle-container" aria-hidden="true"></div>
+
+    <!-- 5. Falling leaves container (populated by background.js) -->
+    <div id="gs-leaf-container" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-72 glass-sidebar flex flex-col z-20 shrink-0">
+            <div class="p-8 text-2xl font-bold tracking-tighter animate-sidebar-item delay-1">
+                <div class="brand flex items-center gap-3">
+                    <img src="assets/images/logo.svg" alt="GreenScape AI Logo" class="w-8 h-8 rounded-full shadow-[0_0_12px_rgba(31,167,116,0.3)]">
+                    <span class="text-white">GreenScape AI</span>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 space-y-3 mt-4">
+                <a href="dashboard.html" class="sidebar-item animate-sidebar-item delay-2 flex items-center px-5 py-3.5 sidebar-link-active font-semibold group">
+                    <span class="item-icon mr-4 text-xl group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">📊</span>
+                    <span class="item-text font-medium">Dashboard</span>
+                </a>
+                <a href="index.html#live-analysis" class="sidebar-item animate-sidebar-item delay-3 flex items-center px-5 py-3.5 font-semibold group">
+                    <span class="item-icon mr-4 text-xl group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">🗺️</span>
+                    <span class="item-text font-medium">Live Analysis</span>
+                </a>
+                 <a href="index.html#how-it-works" class="sidebar-item animate-sidebar-item delay-4 flex items-center px-5 py-3.5 font-semibold group">
+                    <span class="item-icon mr-4 text-xl group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">⚙️</span>
+                    <span class="item-text font-medium">How It Works</span>
+                </a>
+                <a href="index.html" class="sidebar-item animate-sidebar-item delay-5 flex items-center px-5 py-3.5 font-semibold group">
+                    <span class="item-icon mr-4 text-xl group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">🏠</span>
+                    <span class="item-text font-medium">Landing Page</span>
+                </a>
+            </nav>
+            <div class="p-6 border-t border-white/10 mt-auto">
+                 <button id="dark-mode-toggle" class="sidebar-item animate-sidebar-item w-full flex items-center px-5 py-3.5 font-semibold group" style="animation-delay: 0.6s;">
+                    <span class="item-icon mr-4 text-xl group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">🌓</span>
+                    <span class="item-text font-medium">Dark Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-10 overflow-y-auto bg-gray-50 dark:bg-background-dark scroll-smooth">
+            <div class="max-w-[1400px] mx-auto">
+                <header class="flex justify-between items-center mb-12">
+                    <div>
+                        <h1 class="text-3xl font-inter-bold tracking-tight">Analytics Dashboard</h1>
+                        <p class="text-gray-500 dark:text-gray-400 mt-1">Strategic green space monitoring for <span class="text-primary dark:text-accent font-semibold" id="region-name">India</span></p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <select id="location-selector" class="appearance-none bg-white dark:bg-gray-800 px-6 py-2 pr-10 rounded-full text-sm font-semibold border border-gray-100 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+                                <option value="India">India (Default)</option>
+                                <option value="Mumbai">Maharashtra – Mumbai</option>
+                                <option value="New Delhi">Delhi – New Delhi</option>
+                                <option value="Bengaluru">Karnataka – Bengaluru</option>
+                                <option value="Chennai">Tamil Nadu – Chennai</option>
+                                <option value="Ahmedabad">Gujarat – Ahmedabad</option>
+                                <option value="Kolkata">West Bengal – Kolkata</option>
+                                <option value="Jaipur">Rajasthan – Jaipur</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                        <button id="export-report-btn" class="bg-white dark:bg-gray-800 px-6 py-2 rounded-full text-sm font-semibold border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all">Export Report</button>
+                        <button id="optimize-zones-btn" class="btn-primary px-8 py-2 rounded-full text-sm font-semibold flex items-center justify-center min-w-[160px]">Optimize Zones</button>
+                    </div>
+                </header>
+
+                <!-- Top Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xs uppercase tracking-widest text-gray-400 mb-3">Avg. Temp</h3>
+                        <p class="text-4xl font-bold text-primary dark:text-accent tracking-tighter" id="metric-temp">27.4°C</p>
+                        <p class="text-xs text-red-500 mt-2">↑ 0.4°C from last month</p>
+                    </div>
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xs uppercase tracking-widest text-gray-400 mb-3">NDVI Index</h3>
+                        <p class="text-4xl font-bold text-primary dark:text-accent tracking-tighter" id="metric-ndvi">0.54</p>
+                        <p class="text-xs text-green-500 mt-2">↑ 2.1% from last month</p>
+                    </div>
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xs uppercase tracking-widest text-gray-400 mb-3">AQI Score</h3>
+                        <p class="text-4xl font-bold text-primary dark:text-accent tracking-tighter" id="metric-aqi">112</p>
+                        <p class="text-xs text-green-500 mt-2">↓ 5 points from last month</p>
+                    </div>
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xs uppercase tracking-widest text-gray-400 mb-3">Cooling Potential</h3>
+                        <p class="text-4xl font-bold text-primary dark:text-accent tracking-tighter" id="metric-cooling">6.8<span class="text-lg opacity-50">/10</span></p>
+                        <p class="text-xs text-primary dark:text-accent mt-2">Optimal range</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
+                    <div class="lg:col-span-3 glass-panel p-10">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="text-xl font-bold tracking-tight">Temperature Heat Trend</h3>
+                            <select class="bg-transparent border-none text-sm font-semibold text-gray-400 outline-none">
+                                <option>Last 12 Months</option>
+                                <option>Last 30 Days</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="temp-trend-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 flex flex-col gap-8">
+                        <div class="glass-panel p-10 h-fit">
+                            <h3 class="text-xl font-bold tracking-tight mb-8">Vegetation Coverage</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="vegetation-pie-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- NEW: Recommended Zones Panel -->
+                        <div id="recommendation-panel" class="glass-panel p-8 hidden opacity-0 translate-x-12 transition-all duration-700 ease-out">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold tracking-tight">Recommended Plantation Zones</h3>
+                                <button id="close-recommendations" class="text-gray-400 hover:text-red-500 transition-colors">✕</button>
+                            </div>
+                            <div id="zones-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                <!-- Zones will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compact Map -->
+                <div class="glass-panel p-10 relative">
+                    <div class="flex justify-between items-center mb-10">
+                        <div>
+                            <h3 class="text-xl font-bold tracking-tight">Priority Zone Overview</h3>
+                            <p class="text-sm text-gray-400 mt-1">Spatial distribution of recommended planting areas</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-red-500/10 text-red-500 rounded-full text-xs font-bold">Critical (12)</span>
+                            <span class="px-3 py-1 bg-orange-500/10 text-orange-500 rounded-full text-xs font-bold">Medium (24)</span>
+                            <span class="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-xs font-bold">Healthy (48)</span>
+                        </div>
+                    </div>
+                    <div class="relative rounded-2xl overflow-hidden h-[480px]">
+                        <div class="map-skeleton" id="map-skeleton">
+                            <span class="text-primary/40 dark:text-accent/40 font-bold tracking-widest text-xs uppercase">Initializing GIS Engine...</span>
+                        </div>
+                        <div id="map" class="relative z-10 shadow-2xl h-full"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container" class="fixed top-8 right-8 z-[9999] pointer-events-none flex flex-col items-end gap-4"></div>
+
+    <!-- Global Background Script (particles + leaves) -->
+    <script src="assets/js/background.js"></script>
+
+<script src="assets/js/main.js"></script>
+<script src="assets/js/map.js"></script>
+<script src="assets/js/charts.js"></script>
+
+</body>
+</html>

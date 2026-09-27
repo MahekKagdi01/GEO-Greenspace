@@ -1,0 +1,247 @@
+/* =====================================================
+   GREENSCAPE AI — GLOBAL BACKGROUND SYSTEM
+   background.css
+   Insert: <link rel="stylesheet" href="assets/css/background.css">
+   in every page's <head>
+   ===================================================== */
+
+/* ─── 1. VIDEO BACKGROUND ─────────────────────────── */
+#gs-bg-video {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: -3;
+    filter: blur(2px) brightness(0.65);
+    transform: scale(1.05); /* Compensate blur edge */
+    pointer-events: none;
+}
+
+/* ─── 2. DARK GRADIENT OVERLAY ────────────────────── */
+#gs-bg-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -2;
+    pointer-events: none;
+    background: linear-gradient(
+        160deg,
+        rgba(4, 12, 8, 0.78) 0%,
+        rgba(5, 14, 10, 0.72) 30%,
+        rgba(4, 20, 12, 0.75) 60%,
+        rgba(3, 10, 6, 0.82) 100%
+    );
+}
+
+/* ─── 3. ANIMATED GRADIENT FLOW ───────────────────── */
+#gs-bg-gradient-flow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 200%; height: 200%;
+    z-index: -2;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse 80% 60% at 30% 40%,
+        rgba(11, 93, 59, 0.10) 0%,
+        transparent 60%
+    ),
+    radial-gradient(
+        ellipse 70% 50% at 70% 70%,
+        rgba(31, 167, 116, 0.07) 0%,
+        transparent 60%
+    ),
+    radial-gradient(
+        ellipse 60% 40% at 50% 20%,
+        rgba(183, 231, 120, 0.05) 0%,
+        transparent 60%
+    );
+    animation: gsGradientDrift 28s ease-in-out infinite alternate;
+    transform-origin: center center;
+}
+
+@keyframes gsGradientDrift {
+    0%   { transform: translate(-10%, -10%) scale(1); }
+    33%  { transform: translate(-5%, 5%) scale(1.04); }
+    66%  { transform: translate(5%, -5%) scale(0.97); }
+    100% { transform: translate(10%, 10%) scale(1.02); }
+}
+
+/* ─── 4. PARTICLE CONTAINER ───────────────────────── */
+#gs-particle-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Individual particle */
+.gs-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(183, 231, 120, 0.18);
+    box-shadow: 0 0 4px rgba(183, 231, 120, 0.12);
+    animation: gsParticleFloat linear infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes gsParticleFloat {
+    0% {
+        transform: translateY(0) translateX(0) scale(1);
+        opacity: 0;
+    }
+    10% { opacity: 1; }
+    85% { opacity: 0.8; }
+    100% {
+        transform: translateY(-110vh) translateX(var(--drift, 20px)) scale(0.7);
+        opacity: 0;
+    }
+}
+
+/* ─── 5. LEAF CONTAINER ───────────────────────────── */
+#gs-leaf-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Individual leaf */
+.gs-leaf {
+    position: absolute;
+    top: -60px;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: gsLeafFall linear infinite;
+}
+
+/* Leaf SVG shape */
+.gs-leaf svg {
+    display: block;
+    fill: currentColor;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+
+@keyframes gsLeafFall {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0;
+    }
+    5%  { opacity: var(--leaf-opacity, 0.22); }
+    90% { opacity: var(--leaf-opacity, 0.22); }
+    100% {
+        transform: translateY(110vh)
+                   translateX(var(--leaf-drift, 60px))
+                   rotate(var(--leaf-rotate, 360deg));
+        opacity: 0;
+    }
+}
+
+/* ─── 6. DASHBOARD TRANSPARENCY OVERRIDES ─────────────
+   Makes the sidebar & main panel glass-like so the
+   video background shows through on dashboard.html
+   ─────────────────────────────────────────────────── */
+
+/* Dashboard Sidebar — glass look */
+body > div > aside,
+.dashboard-sidebar {
+    background: rgba(5, 18, 12, 0.72) !important;
+    backdrop-filter: blur(18px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+    border-right-color: rgba(31, 167, 116, 0.18) !important;
+}
+
+/* Dashboard Main content area */
+body > div > main,
+.dashboard-main {
+    background: rgba(4, 14, 9, 0.55) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Ensure glass-panel in dashboard is darker/richer for contrast */
+.dark .glass-panel,
+body > div > main .glass-panel {
+    background: rgba(6, 20, 14, 0.65) !important;
+    border-color: rgba(31, 167, 116, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+
+/* Index landing page — bg-background-light body in light mode won't block video */
+html:not(.dark) body {
+    background: transparent !important;
+}
+
+/* Dark mode body transparent too */
+.dark body {
+    background: transparent !important;
+}
+
+/* ─── 7. LANDING PAGE SECTION OVERRIDES ───────────────
+   Override style.css opaque section backgrounds so the
+   earth video is visible across the entire landing page
+   ─────────────────────────────────────────────────── */
+
+/* Light mode — semi-transparent dark tint instead of white */
+html:not(.dark) section#problem,
+html:not(.dark) section#live-analysis,
+html:not(.dark) section#impact-simulation,
+html:not(.dark) section#how-it-works,
+html:not(.dark) section#ai-recommendations,
+html:not(.dark) section#tech-stack {
+    background: rgba(4, 14, 9, 0.72) !important;
+    border-top-color: rgba(31, 167, 116, 0.12) !important;
+}
+
+/* Ensure light mode text inverts to white in these sections */
+html:not(.dark) section:not(#hero) h2,
+html:not(.dark) section:not(#hero) h3,
+html:not(.dark) section:not(#hero) h4 {
+    color: #e8f5ee !important;
+}
+
+html:not(.dark) section:not(#hero) p,
+html:not(.dark) section:not(#hero) .text-sm,
+html:not(.dark) section:not(#hero) .text-gray-500,
+html:not(.dark) section:not(#hero) .text-gray-400 {
+    color: rgba(210, 240, 220, 0.78) !important;
+}
+
+html:not(.dark) section:not(#hero) .text-accent,
+html:not(.dark) section:not(#hero) .text-secondary,
+html:not(.dark) section:not(#hero) .text-primary {
+    color: #B7E778 !important;
+}
+
+/* Glass cards in landing light mode — darker glass */
+html:not(.dark) .problem-card,
+html:not(.dark) .step-item,
+html:not(.dark) .recommendation-card,
+html:not(.dark) section:not(#hero) .glass-panel:not(.stat-card) {
+    background: rgba(6, 22, 14, 0.65) !important;
+    border-color: rgba(31, 167, 116, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Zone priority buttons — adapt in light mode */
+html:not(.dark) section .bg-white\/50,
+html:not(.dark) section .bg-white\/40 {
+    background: rgba(5, 18, 12, 0.55) !important;
+}
+
+/* Header in light mode — darker glass */
+html:not(.dark) header {
+    background: rgba(4, 14, 9, 0.60) !important;
+}
+
+html:not(.dark) .nav-link {
+    color: rgba(210, 240, 220, 0.85) !important;
+}
+
+/* Footer */
+html:not(.dark) footer {
+    background: rgba(3, 10, 7, 0.85) !important;
+}

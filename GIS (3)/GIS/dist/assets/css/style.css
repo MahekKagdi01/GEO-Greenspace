@@ -1,0 +1,843 @@
+/* Defining CSS variables for our color palette */
+:root {
+    --color-primary: #0B5D3B;
+    --color-secondary: #1FA774;
+    --color-accent: #B7E778;
+    --color-background-light: #F6F8F7;
+    --color-background-dark: #050707; /* Softer black */
+    --primary-gradient: linear-gradient(135deg, #0B5D3B, #1FA774);
+    --glass-bg: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.dark {
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Applying a smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Base body styles */
+body {
+    font-family: 'Manrope', sans-serif;
+    background-color: var(--color-background-light);
+    color: #475569; /* text-gray-600 equivalent for better contrast in light mode */
+    line-height: 1.6;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Dark mode styles */
+.dark body {
+    background-color: var(--color-background-dark);
+    color: #cbd5e1; /* Softer white/gray for dark mode */
+}
+
+/* Custom font for headings */
+.font-inter-bold {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+h1, h2, h3 {
+    color: #0f172a;
+}
+
+.dark h1, .dark h2, .dark h3 {
+    color: #f8fafc;
+}
+
+/* Paragraph Readability Refinements (Light Mode) */
+p {
+    color: #334155; /* text-gray-700 equivalent */
+}
+
+.dark p {
+    color: inherit;
+}
+
+small, .text-sm {
+    color: #475569; /* text-gray-600 */
+}
+
+.dark small, .dark .text-sm {
+    color: inherit;
+}
+
+/* Hero Subtitle Refinement */
+#hero p {
+    opacity: 0.85;
+}
+
+.dark #hero p {
+    opacity: 1;
+}
+
+/* Typography Scale */
+h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
+h2 { font-size: clamp(2rem, 4vw, 3rem); }
+
+/* Improved Glassmorphism Panel Style */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Hover Interactions */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.dark .hover-lift:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(31, 167, 116, 0.3);
+}
+
+/* Button Enhancements */
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(31, 167, 116, 0.3);
+    transition: all 0.3s ease;
+}
+
+body:not(.dark) .btn-primary {
+    box-shadow: 0 6px 18px rgba(11,93,59,0.18);
+}
+
+.btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(31, 167, 116, 0.5);
+}
+
+/* Pulse Animation for CTA */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(31, 167, 116, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(31, 167, 116, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(31, 167, 116, 0); }
+}
+
+.pulse-cta {
+    animation: pulse-glow 3s infinite;
+}
+
+/* Map Loading Skeleton */
+@keyframes skeleton-pulse {
+    0% { background-color: rgba(203, 213, 225, 0.1); }
+    50% { background-color: rgba(203, 213, 225, 0.2); }
+    100% { background-color: rgba(203, 213, 225, 0.1); }
+}
+
+.map-skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background-color: rgba(203, 213, 225, 0.1);
+    animation: skeleton-pulse 2s infinite ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.map-skeleton.hidden {
+    opacity: 0;
+}
+
+/* Custom Toggle Checkbox Refinements */
+.toggle-checkbox {
+    appearance: none;
+    width: 48px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: #cbd5e1;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toggle-checkbox:checked {
+    background-color: var(--color-secondary);
+}
+
+.toggle-checkbox:active {
+    transform: scale(0.95);
+}
+
+.toggle-checkbox::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+.toggle-checkbox:checked::before {
+    transform: translateX(24px);
+}
+
+/* Custom Slider for Impact Simulation */
+#plantation-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+#plantation-slider:hover {
+    opacity: 1;
+}
+
+#plantation-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+}
+
+#plantation-slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+}
+
+.dark #plantation-slider::-webkit-slider-thumb {
+    background: var(--color-accent);
+}
+.dark #plantation-slider::-moz-range-thumb {
+    background: var(--color-accent);
+}
+
+.container-frame {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.full-width-section {
+    width: 100%;
+}
+
+.dashboard-card {
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 32px;
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.dashboard-map-container {
+    height: 480px;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+#map {
+  height: 480px;
+  min-height: 480px;
+}
+
+#compact-map {
+  height: 450px;
+  min-height: 450px;
+}
+
+/* Timeline Experience for Steps */
+.timeline-line {
+    position: absolute;
+    top: 50px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: rgba(31, 167, 116, 0.2);
+    z-index: 0;
+}
+
+.timeline-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--color-secondary);
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.step-icon {
+    transition: all 0.4s ease;
+    background: white;
+    z-index: 2;
+}
+
+.step-item:hover .step-icon {
+    transform: rotate(15deg) scale(1.1);
+    background: var(--color-secondary);
+    color: white;
+}
+
+/* Hero Enhancements */
+#hero-bg {
+    background: radial-gradient(circle at 50% 50%, #0B5D3B 0%, #050707 100%);
+}
+
+.hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), 
+                      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+}
+
+/* Link Underline Animation */
+.nav-link {
+    position: relative;
+    color: #355f4d; /* Light mode default */
+}
+
+.dark .nav-link {
+    color: inherit;
+}
+
+.nav-link:hover {
+    color: #0B5D3B;
+}
+
+.dark .nav-link:hover {
+    color: var(--color-secondary);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--color-secondary);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Navbar blur on scroll */
+.navbar-scrolled {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
+}
+
+/* --- Hero Animated Background Restoration --- */
+
+.glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.35;
+    animation: blob-drift 22s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+    width: 600px;
+    height: 600px;
+    background: #1FA774;
+    top: -10%;
+    left: 5%;
+    animation-duration: 18s;
+}
+
+.blob-2 {
+    width: 500px;
+    height: 500px;
+    background: #0B5D3B;
+    bottom: -5%;
+    right: 10%;
+    animation-duration: 25s;
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    width: 400px;
+    height: 400px;
+    background: #4ADE80;
+    top: 35%;
+    left: 45%;
+    animation-duration: 20s;
+    animation-delay: -10s;
+}
+
+@keyframes blob-drift {
+    0% { transform: translate(0px, 0px) scale(1); }
+    100% { transform: translate(120px, 60px) scale(1.15); }
+}
+
+/* Custom Leaflet Marker Pin */
+.marker-pin {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -15px 0 0 -15px;
+    border: 1px solid #fff;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+}
+.marker-pin::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    margin: 8px 0 0 8px;
+    background: #fff;
+    position: absolute;
+    border-radius: 50%;
+}
+
+[class*="hover:"], [class*="focus:"] {
+    transition: all 0.3s ease;
+}
+
+/* Branding and Logo Styles */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    height: 34px;
+    width: auto;
+    filter: drop-shadow(0 0 6px rgba(31, 167, 116, 0.35));
+    transition: transform .25s ease, filter .25s ease;
+}
+
+.logo:hover {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 14px rgba(183, 231, 120, 0.8));
+}
+
+.brand-text {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* --- LIGHT MODE REFINEMENT (STRICTLY SCOPED) --- */
+
+/* 1. SECTION BACKGROUNDS (BELOW HERO) */
+html:not(.dark) section#problem,
+html:not(.dark) section#live-analysis,
+html:not(.dark) section#impact-simulation,
+html:not(.dark) section#about {
+    background: #F4F8F6 !important;
+    border-top: 1px solid rgba(16, 75, 55, 0.06);
+}
+
+html:not(.dark) section#how-it-works,
+html:not(.dark) section#ai-recommendations,
+html:not(.dark) section#tech-stack {
+    background: #FFFFFF !important;
+    border-top: 1px solid rgba(16, 75, 55, 0.06);
+}
+
+/* 2. TEXT CONTRAST (BELOW HERO) */
+html:not(.dark) section:not(#hero) h2,
+html:not(.dark) section:not(#hero) h3 {
+    color: #0F2E25 !important;
+}
+
+html:not(.dark) section:not(#hero) p {
+    color: #355F4D !important;
+    opacity: 1 !important;
+}
+
+html:not(.dark) section:not(#hero) .text-sm,
+html:not(.dark) section:not(#hero) .text-gray-500,
+html:not(.dark) section:not(#hero) .text-gray-400 {
+    color: #5C7A70 !important;
+}
+
+/* 3. CARDS (BELOW HERO) */
+html:not(.dark) .problem-card,
+html:not(.dark) .step-item,
+html:not(.dark) .recommendation-card,
+html:not(.dark) .dashboard-card,
+html:not(.dark) .glass-panel:not(.stat-card) {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(16, 75, 55, 0.12) !important;
+    box-shadow: 0 12px 30px rgba(16, 75, 55, 0.06) !important;
+}
+
+html:not(.dark) .problem-card:hover,
+html:not(.dark) .step-item:hover,
+html:not(.dark) .recommendation-card:hover,
+html:not(.dark) .hover-lift:hover {
+    box-shadow: 0 18px 45px rgba(16, 75, 55, 0.12) !important;
+    border-color: rgba(31, 167, 116, 0.35) !important;
+}
+
+/* 4. ICONS & ACCENT (BELOW HERO) */
+html:not(.dark) section:not(#hero) .text-accent,
+html:not(.dark) section:not(#hero) .text-secondary {
+    color: #0B5D3B !important;
+}
+
+/* 5. FOOTER (LIGHT MODE ONLY) */
+html:not(.dark) footer {
+    background: #0F2E25 !important;
+}
+
+html:not(.dark) footer p,
+html:not(.dark) footer h4,
+html:not(.dark) footer a {
+    color: #DDF3EA !important;
+}
+
+html:not(.dark) footer a:hover {
+    color: #1FA774 !important;
+}
+
+html:not(.dark) footer .border-t {
+    border-color: rgba(221, 243, 234, 0.1) !important;
+}
+
+/* --- LAYOUT ALIGNMENT FIXES --- */
+
+/* 1. SECTION TITLES CENTERED */
+#how-it-works h2 {
+    text-align: center !important;
+    width: 100% !important;
+    margin-bottom: 4rem !important;
+}
+
+/* 2. URBAN HEAT ISLAND (PROBLEM) SECTION ALIGNMENT */
+#problem .container-frame > div.grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: flex-start !important; /* Top align columns */
+    gap: 3rem !important;
+}
+
+@media (min-width: 1024px) {
+    #problem .container-frame > div.grid {
+        grid-template-columns: 1.2fr 1fr !important;
+    }
+
+    /* Remove any vertical centering or height stretching from columns */
+    #problem .container-frame > div.grid > div {
+        align-self: flex-start !important;
+        height: auto !important;
+        margin: 0 !important;
+    }
+}
+
+/* 3. VERTICAL RHYTHM FOR INFO CARDS */
+#problem .flex-col {
+    gap: 1.5rem !important;
+    justify-content: flex-start !important;
+}
+
+/* 4. MOBILE CENTERING */
+@media (max-width: 1023px) {
+    #problem .container-frame > div.grid {
+        text-align: center !important;
+    }
+    #problem .problem-card {
+        text-align: left !important;
+    }
+}
+
+/* 5. UNIFIED CONTAINER WIDTHS */
+#how-it-works .max-w-5xl {
+    max-width: 100% !important;
+}
+
+#problem, #how-it-works {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* --- PREMIUM DASHBOARD ENHANCEMENTS --- */
+
+/* Glass Panel Upgrade */
+.dashboard-card, .glass-panel {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.dark .dashboard-card, .dark .glass-panel {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Inner highlight for glass */
+.glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.glass-panel:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+    border-color: rgba(31, 167, 116, 0.2) !important;
+}
+
+.dark .glass-panel:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+    border-color: rgba(31, 167, 116, 0.3) !important;
+}
+
+/* Stat Card specific typography */
+.stat-value {
+    background: linear-gradient(135deg, #0B5D3B, #1FA774);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-feature-settings: 'tnum';
+    font-variant-numeric: tabular-nums;
+}
+
+.dark .stat-value {
+    background: linear-gradient(135deg, #1FA774, #B7E778);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Pulse Glow for Stats */
+@keyframes pulse-soft {
+    0% { box-shadow: 0 0 0 0 rgba(31, 167, 116, 0.2); }
+    70% { box-shadow: 0 0 0 10px rgba(31, 167, 116, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(31, 167, 116, 0); }
+}
+
+.pulse-stat {
+    animation: pulse-soft 2s infinite;
+}
+
+/* Sidebar indicator */
+.sidebar-link {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.sidebar-link-active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    height: 50%;
+    width: 4px;
+    background: white;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Button Shine Effect */
+.btn-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(30deg);
+    transition: all 0.6s ease;
+}
+
+.btn-shine:hover::after {
+    left: 120%;
+}
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+
+.skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    display: inline-block;
+    position: relative;
+    animation: shimmer 1s linear infinite forwards;
+}
+
+.dark .skeleton {
+    background: #1e293b;
+    background-image: linear-gradient(to right, #1e293b 0%, #334155 20%, #1e293b 40%, #1e293b 100%);
+}
+
+/* --- OPTIMIZATION WORKFLOW STYLES --- */
+
+.btn-loading {
+    pointer-events: none !important;
+    opacity: 0.8 !important;
+}
+
+.spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.dashboard-dimmed {
+    opacity: 0.5 !important;
+    filter: blur(1px);
+    pointer-events: none;
+    transition: all 0.5s ease;
+}
+
+.toast-item {
+    background: #0B5D3B;
+    color: #B7E778;
+    padding: 1.25rem 2rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    font-weight: 700;
+    border-left: 5px solid #1FA774;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    pointer-events: auto;
+    animation: toast-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes toast-in {
+    0% { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.toast-exit {
+    animation: toast-out 0.4s ease-in forwards !important;
+}
+
+@keyframes toast-out {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0; }
+}
+
+.pulse-marker-wrapper {
+    background: rgba(31, 167, 116, 0.4);
+    border: 2px solid #B7E778;
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(31, 167, 116, 0.8);
+    animation: marker-pulse 2s infinite ease-in-out;
+}
+
+@keyframes marker-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 167, 116, 0.7); opacity: 0.8; }
+    70% { transform: scale(1.4); box-shadow: 0 0 0 10px rgba(31, 167, 116, 0); opacity: 0.3; }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 167, 116, 0.7); opacity: 0.8; }
+}
+
+/* --- RECOMMENDED ZONES PANEL STYLES --- */
+
+.zone-item {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem;
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.dark .zone-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.zone-item:hover {
+    background: rgba(31, 167, 116, 0.1);
+    transform: translateX(5px);
+    border-color: rgba(31, 167, 116, 0.3);
+}
+
+.zone-active {
+    border-color: #1FA774 !important;
+    background: rgba(31, 167, 116, 0.15) !important;
+    box-shadow: 0 4px 15px rgba(31, 167, 116, 0.1);
+}
+
+.priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.priority-high { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+.priority-medium { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); }
+.priority-low { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(31, 167, 116, 0.3); border-radius: 10px; }
+
+.panel-show {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}

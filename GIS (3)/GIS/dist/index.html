@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenScape AI — GIS Based Green Space Optimization Platform</title>
+
+    <!-- Tailwind (load FIRST) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0B5D3B',
+                        secondary: '#1FA774',
+                        accent: '#B7E778',
+                        'background-light': '#F6F8F7',
+                        'background-dark': '#0E1111',
+                    },
+                    fontFamily: {
+                        'inter-bold': ['Inter', 'sans-serif'],
+                        'manrope': ['Manrope', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet (FIXED — removed integrity & crossorigin) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Heatmap plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Manrope&display=swap" rel="stylesheet">
+
+    <!-- Your CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <!-- Global Background System -->
+    <link rel="stylesheet" href="assets/css/background.css">
+
+    <!-- FORCE MAP HEIGHT -->
+    <style>
+        #map,
+        #liveMap,
+        #analysisMap,
+        #dashboardMap {
+            height: 420px;
+            width: 100%;
+            min-height: 420px;
+        }
+
+        /* Hero Animation Background Styles */
+        #hero {
+            position: relative;
+            overflow: hidden;
+            background-color: transparent;
+            /* Video background shows through */
+        }
+
+        .greenscape-blobs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .greenscape-blobs::before,
+        .greenscape-blobs::after {
+            content: "";
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            filter: blur(140px);
+            opacity: 0.12;
+            /* Subtle accent glow — video is primary background */
+            animation: blobFloat 20s infinite alternate ease-in-out;
+        }
+
+        .greenscape-blobs::before {
+            background: #1FA774;
+            top: 10%;
+            left: 10%;
+        }
+
+        .greenscape-blobs::after {
+            background: #4ADE80;
+            bottom: 10%;
+            right: 10%;
+            animation-duration: 26s;
+        }
+
+        @keyframes blobFloat {
+            0% {
+                transform: translate(0px, 0px) scale(1);
+            }
+
+            100% {
+                transform: translate(120px, 80px) scale(1.15);
+            }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light text-gray-800 font-manrope dark:bg-background-dark dark:text-gray-200">
+
+    <!-- ╔══════════════════════════════════════════════════
+         ║  GLOBAL BACKGROUND SYSTEM — GreenScape AI
+         ║  Copy this exact block to every page
+         ╚══════════════════════════════════════════════════ -->
+
+    <!-- 1. Looping Earth Video -->
+    <video id="gs-bg-video" autoplay muted loop playsinline poster="assets/images/earth-poster.jpg">
+        <source src="assets/video/earth.mp4" type="video/mp4">
+    </video>
+
+    <!-- 2. Dark gradient overlay (improves text readability) -->
+    <div id="gs-bg-overlay" aria-hidden="true"></div>
+
+    <!-- 3. Animated gradient flow (subtle green tones) -->
+    <div id="gs-bg-gradient-flow" aria-hidden="true"></div>
+
+    <!-- 4. Floating particles container (populated by background.js) -->
+    <div id="gs-particle-container" aria-hidden="true"></div>
+
+    <!-- 5. Falling leaves container (populated by background.js) -->
+    <div id="gs-leaf-container" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+
+    <!-- Floating Pill Header -->
+    <header id="gs-header"
+        class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-5xl transition-all duration-500">
+        <div
+            class="bg-[#020617]/55 backdrop-blur-[16px] border border-white/[0.08] shadow-[0_8px_32px_rgba(2,6,23,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] rounded-full px-4 py-2.5 md:px-5 md:py-3 flex justify-between items-center transition-all duration-500">
+
+            <!-- LEFT: Brand -->
+            <a href="#" class="flex items-center gap-2 shrink-0 group/brand">
+                <img src="assets/images/logo.svg" alt="GreenScape AI"
+                    class="w-8 h-8 rounded-full shadow-[0_0_12px_rgba(31,167,116,0.3)] group-hover/brand:scale-110 group-hover/brand:shadow-[0_0_16px_rgba(31,167,116,0.5)] transition-all duration-300">
+                <span class="text-white font-inter-bold text-lg tracking-tight hidden sm:block">GreenScape <span
+                        class="text-accent">AI</span></span>
+            </a>
+
+            <!-- CENTER: Nav Links -->
+            <nav class="hidden md:flex items-center space-x-1 p-1.5 bg-white/5 border border-white/10 rounded-full">
+                <a href="#problem"
+                    class="relative text-sm text-gray-300 font-medium px-4 py-1.5 rounded-full hover:text-accent hover:drop-shadow-[0_0_8px_rgba(31,167,116,0.5)] transition-all duration-300 group/nav">
+                    <span class="relative z-10">AI Heat Intelligence</span>
+                    <div
+                        class="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover/nav:opacity-100 scale-95 group-hover/nav:scale-100 transition-all duration-300 z-0">
+                    </div>
+                </a>
+                <a href="#how-it-works"
+                    class="relative text-sm text-gray-300 font-medium px-4 py-1.5 rounded-full hover:text-accent hover:drop-shadow-[0_0_8px_rgba(31,167,116,0.5)] transition-all duration-300 group/nav">
+                    <span class="relative z-10">How It Works</span>
+                    <div
+                        class="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover/nav:opacity-100 scale-95 group-hover/nav:scale-100 transition-all duration-300 z-0">
+                    </div>
+                </a>
+                <a href="#live-analysis"
+                    class="relative text-sm text-gray-300 font-medium px-4 py-1.5 rounded-full hover:text-accent hover:drop-shadow-[0_0_8px_rgba(31,167,116,0.5)] transition-all duration-300 group/nav">
+                    <span class="relative z-10">Live Analysis</span>
+                    <div
+                        class="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover/nav:opacity-100 scale-95 group-hover/nav:scale-100 transition-all duration-300 z-0">
+                    </div>
+                </a>
+                <a href="#about"
+                    class="relative text-sm text-gray-300 font-medium px-4 py-1.5 rounded-full hover:text-accent hover:drop-shadow-[0_0_8px_rgba(31,167,116,0.5)] transition-all duration-300 group/nav">
+                    <span class="relative z-10">About</span>
+                    <div
+                        class="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover/nav:opacity-100 scale-95 group-hover/nav:scale-100 transition-all duration-300 z-0">
+                    </div>
+                </a>
+            </nav>
+
+            <!-- RIGHT: Actions -->
+            <div class="flex items-center gap-3 shrink-0">
+                <button id="dark-mode-toggle"
+                    class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-accent hover:bg-white/10 hover:border-accent/30 transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_12px_rgba(31,167,116,0.4)]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                        </path>
+                    </svg>
+                </button>
+                <a href="dashboard.html"
+                    class="relative overflow-hidden group/btn bg-accent text-[#020617] font-extrabold text-sm px-6 py-2.5 rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(31,167,116,0.3)] hover:shadow-[0_0_25px_rgba(31,167,116,0.6)]">
+                    <span class="relative z-10">Dashboard</span>
+                    <!-- Shimmer effect -->
+                    <div
+                        class="absolute inset-0 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent z-0">
+                    </div>
+                </a>
+                <!-- Mobile Menu Button -->
+                <button
+                    class="md:hidden w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-white/10 hover:text-white transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <style>
+        /* Shimmer Animation for dashboard button */
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Header shrink classes applied via JS */
+        .header-shrunk {
+            top: 12px !important;
+            width: 90% !important;
+            max-width: 900px !important;
+        }
+
+        .header-shrunk>div {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            background: rgba(2, 6, 23, 0.75) !important;
+            backdrop-filter: blur(24px) !important;
+        }
+    </style>
+    <script>
+        // Header shrink effect on scroll
+        document.addEventListener('DOMContentLoaded', () => {
+            const header = document.getElementById('gs-header');
+            if (header) {
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 60) {
+                        header.classList.add('header-shrunk');
+                    } else {
+                        header.classList.remove('header-shrunk');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <main class="pt-20">
+        <!-- SECTION 1: HERO (Full-width) -->
+        <section id="hero"
+            class="full-width-section min-h-[85vh] pt-28 pb-20 md:pb-24 flex items-center justify-center text-center text-white">
+            <div class="greenscape-blobs"></div>
+
+            <div class="container-frame flex flex-col items-center h-full justify-center relative">
+                <div class="flex flex-col items-center hero-content">
+                    <h1 class="text-5xl md:text-7xl font-inter-bold mb-6 leading-[1.1] tracking-tight">Designing Cooler
+                        Cities <br><span class="text-accent">with AI Powered</span> Green Planning</h1>
+                    <p class="text-xl md:text-2xl max-w-3xl mb-12 text-gray-300 font-light">Detect Urban Heat Islands
+                        and Optimize Green Spaces Using <span class="text-white font-medium">GIS & Machine
+                            Learning</span></p>
+                    <div class="flex space-x-6">
+                        <a href="#live-analysis"
+                            class="btn-primary pulse-cta py-4 px-10 rounded-full text-lg font-bold">Try Live
+                            Analysis</a>
+                        <a href="#how-it-works"
+                            class="bg-white/10 backdrop-blur-md border border-white/20 text-white py-4 px-10 rounded-full text-lg font-semibold hover:bg-white/20 transition-all">View
+                            Demo</a>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-14 md:mt-20 -translate-y-10 md:-translate-y-12 flex flex-col md:flex-row justify-center gap-6 w-full stats-row">
+                    <div class="stat-card glass-panel p-8 rounded-[2rem] min-w-[200px] hover-lift">
+                        <p class="text-xs uppercase tracking-widest text-gray-400 mb-1">Temp Reduction</p>
+                        <p id="temp-reduction" class="text-3xl font-bold text-accent">-2.7°C</p>
+                    </div>
+                    <div class="stat-card glass-panel p-8 rounded-[2rem] min-w-[200px] hover-lift">
+                        <p class="text-xs uppercase tracking-widest text-gray-400 mb-1">Air Quality</p>
+                        <p id="air-quality" class="text-3xl font-bold text-accent">+15%</p>
+                    </div>
+                    <div class="stat-card glass-panel p-8 rounded-[2rem] min-w-[200px] hover-lift">
+                        <p class="text-xs uppercase tracking-widest text-gray-400 mb-1">Plantation Zones</p>
+                        <p id="plantation-zones" class="text-3xl font-bold text-accent">15</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: AI HEAT ANALYSIS — UPGRADED -->
+        <section id="problem" class="full-width-section py-24">
+            <div class="container-frame">
+
+                <!-- Section Header -->
+                <div class="text-center mb-14">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-semibold mb-6">
+                        <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse inline-block"></span>
+                        AI Heat Intelligence · Live Analysis
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-inter-bold tracking-tight mb-4">India Urban Heat Monitor</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Hover any state on the map to see real-time thermal data.
+                        Click to load full AI-powered diagnostics &amp; green infrastructure plan.</p>
+                </div>
+
+                <!-- ══ TOP GRID: Map (left) + Data Panels (right) ══ -->
+                <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_1fr] gap-8 items-start mb-8">
+
+                    <!-- ── India Heatmap (geo-accurate SVG) ── -->
+                    <div class="glass-panel p-5 relative" id="heatmap-container">
+
+                        <!-- Legend Bar -->
+                        <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+                            <h3 class="text-base font-bold text-white">🇮🇳 Thermal Heat Index — India</h3>
+                            <div class="flex items-center gap-4 text-xs text-gray-400">
+                                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded inline-block"
+                                        style="background:#ef4444;box-shadow:0 0 6px #ef4444"></span>Critical</span>
+                                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded inline-block"
+                                        style="background:#f59e0b;box-shadow:0 0 6px #f59e0b"></span>Moderate</span>
+                                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded inline-block"
+                                        style="background:#22c55e;box-shadow:0 0 6px #22c55e"></span>Healthy</span>
+                            </div>
+                        </div>
+
+                        <!-- SVG Map Wrapper (position:relative so tooltip is correctly anchored) -->
+                        <div class="relative w-full flex justify-center"
+                            style="min-height:480px;background:radial-gradient(ellipse at center,rgba(11,93,59,0.08) 0%,transparent 70%);border-radius:16px;">
+                            <svg id="india-svg" viewBox="68 5 360 490" class="w-full max-w-[500px] h-auto"
+                                style="filter:drop-shadow(0 0 22px rgba(31,167,116,0.18))">
+
+                                <!-- ── GEO-ACCURATE STATE PATHS (scaled to viewBox 68 5 360 490) ── -->
+
+                                <!-- Jammu & Kashmir (simplified top) -->
+                                <path data-state="Jammu & Kashmir"
+                                    d="M152,8 L195,5 L230,18 L245,38 L228,55 L210,65 L185,62 L162,50 L148,35 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="190" y="38" class="state-label">J&amp;K</text>
+
+                                <!-- Ladakh -->
+                                <path data-state="Ladakh" d="M228,8 L285,5 L310,25 L300,50 L275,58 L245,45 L230,20 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="265" y="32" class="state-label">Ladakh</text>
+
+                                <!-- Himachal Pradesh -->
+                                <path data-state="Himachal Pradesh"
+                                    d="M185,62 L210,65 L228,75 L220,92 L200,98 L182,88 L172,75 Z" class="india-state"
+                                    style="--heat-color:#22c55e" />
+                                <text x="198" y="83" class="state-label">Himachal Pradesh</text>
+
+                                <!-- Punjab -->
+                                <path data-state="Punjab"
+                                    d="M148,68 L182,62 L182,88 L175,102 L152,108 L138,95 L138,80 Z" class="india-state"
+                                    style="--heat-color:#f59e0b" />
+                                <text x="157" y="88" class="state-label">Punjab</text>
+
+                                <!-- Haryana -->
+                                <path data-state="Haryana"
+                                    d="M175,102 L200,98 L210,110 L205,128 L185,132 L168,125 L165,112 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="185" y="118" class="state-label">HR</text>
+
+                                <!-- Delhi (tiny – clickable dot region) -->
+                                <path data-state="Delhi" d="M200,110 L210,110 L212,122 L202,124 Z" class="india-state"
+                                    style="--heat-color:#ef4444" />
+                                <text x="206" y="120" class="state-label" style="font-size:5px">Delhi</text>
+
+                                <!-- Uttarakhand -->
+                                <path data-state="Uttarakhand"
+                                    d="M210,75 L248,68 L268,80 L262,100 L240,108 L218,105 L210,90 Z" class="india-state"
+                                    style="--heat-color:#22c55e" />
+                                <text x="235" y="93" class="state-label">Uttarakhand</text>
+
+                                <!-- Uttar Pradesh -->
+                                <path data-state="Uttar Pradesh"
+                                    d="M205,128 L262,108 L318,115 L330,138 L320,162 L290,175 L255,178 L228,165 L210,148 Z"
+                                    class="india-state" style="--heat-color:#ef4444" />
+                                <text x="268" y="148" class="state-label">Uttar Pradesh</text>
+
+                                <!-- Rajasthan -->
+                                <path data-state="Rajasthan"
+                                    d="M88,102 L148,95 L168,125 L185,132 L210,148 L205,185 L198,215 L165,228 L118,225 L82,200 L72,165 L78,130 Z"
+                                    class="india-state" style="--heat-color:#ef4444" />
+                                <text x="140" y="175" class="state-label">Rajasthan</text>
+
+                                <!-- Bihar -->
+                                <path data-state="Bihar"
+                                    d="M318,118 L368,112 L382,132 L375,158 L348,165 L325,162 L318,145 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="345" y="140" class="state-label">Bihar</text>
+
+                                <!-- Jharkhand -->
+                                <path data-state="Jharkhand"
+                                    d="M325,162 L375,158 L388,178 L382,202 L358,215 L332,208 L318,190 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="350" y="190" class="state-label">Jharkhand</text>
+
+                                <!-- West Bengal -->
+                                <path data-state="West Bengal"
+                                    d="M375,118 L410,115 L420,148 L412,178 L395,200 L378,195 L365,172 L375,145 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="388" y="152" class="state-label">WB</text>
+
+                                <!-- Northeast India -->
+                                <path data-state="Northeast India"
+                                    d="M412,118 L432,110 L425,82 L405,75 L392,88 L385,108 L400,118 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="405" y="100" class="state-label">NE</text>
+
+                                <!-- Sikkim (tiny) -->
+                                <path data-state="Sikkim" d="M400,112 L408,110 L410,118 L402,120 Z" class="india-state"
+                                    style="--heat-color:#22c55e" />
+
+                                <!-- Odisha -->
+                                <path data-state="Odisha"
+                                    d="M332,210 L382,205 L395,225 L388,258 L362,272 L335,262 L318,242 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="355" y="242" class="state-label">Odisha</text>
+
+                                <!-- Madhya Pradesh -->
+                                <path data-state="Madhya Pradesh"
+                                    d="M168,222 L205,215 L255,218 L295,222 L318,240 L312,272 L280,290 L238,292 L198,282 L165,258 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="242" y="258" class="state-label">Madhya Pradesh</text>
+
+                                <!-- Gujarat -->
+                                <path data-state="Gujarat"
+                                    d="M78,205 L118,225 L162,228 L165,260 L155,295 L130,318 L98,328 L72,308 L68,268 L72,235 Z"
+                                    class="india-state" style="--heat-color:#ef4444" />
+                                <text x="110" y="278" class="state-label">Gujarat</text>
+
+                                <!-- Chhattisgarh -->
+                                <path data-state="Chhattisgarh"
+                                    d="M295,228 L332,232 L342,258 L338,290 L312,308 L285,302 L272,278 L278,250 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="305" y="272" class="state-label">Chhattisgarh</text>
+
+                                <!-- Maharashtra -->
+                                <path data-state="Maharashtra"
+                                    d="M155,295 L238,292 L278,295 L285,332 L268,362 L248,378 L215,382 L185,368 L162,340 L148,312 Z"
+                                    class="india-state" style="--heat-color:#ef4444" />
+                                <text x="215" y="340" class="state-label">Maharashtra</text>
+
+                                <!-- Telangana -->
+                                <path data-state="Telangana"
+                                    d="M280,308 L332,302 L342,328 L332,355 L305,368 L280,355 L272,335 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="305" y="338" class="state-label">TS</text>
+
+                                <!-- Andhra Pradesh -->
+                                <path data-state="Andhra Pradesh"
+                                    d="M248,378 L305,368 L340,360 L358,388 L352,418 L328,438 L298,452 L268,442 L245,418 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="295" y="412" class="state-label">AP</text>
+
+                                <!-- Karnataka -->
+                                <path data-state="Karnataka"
+                                    d="M185,368 L245,378 L248,418 L240,452 L215,472 L188,462 L168,438 L158,405 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="200" y="422" class="state-label">Karnataka</text>
+
+                                <!-- Goa (tiny) -->
+                                <path data-state="Goa" d="M162,368 L172,368 L172,380 L162,380 Z" class="india-state"
+                                    style="--heat-color:#22c55e" />
+
+                                <!-- Tamil Nadu -->
+                                <path data-state="Tamil Nadu"
+                                    d="M215,472 L265,455 L278,480 L268,508 L248,528 L228,532 L210,515 L200,490 Z"
+                                    class="india-state" style="--heat-color:#f59e0b" />
+                                <text x="238" y="498" class="state-label">TN</text>
+
+                                <!-- Kerala -->
+                                <path data-state="Kerala"
+                                    d="M168,438 L185,462 L198,492 L192,520 L175,532 L158,512 L152,485 L155,460 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                                <text x="168" y="490" class="state-label">Kerala</text>
+
+                                <!-- Andaman & Nicobar (far east - small) -->
+                                <path data-state="Andaman & Nicobar" d="M415,298 L420,295 L422,308 L417,312 Z"
+                                    class="india-state" style="--heat-color:#22c55e" />
+                            </svg>
+
+                            <!-- Floating Tooltip -->
+                            <div id="state-tooltip" class="absolute hidden pointer-events-none z-50"
+                                style="background:rgba(3,14,9,0.96);border:1px solid rgba(31,167,116,0.45);backdrop-filter:blur(14px);border-radius:14px;padding:12px 16px;white-space:nowrap;box-shadow:0 0 28px rgba(31,167,116,0.25)">
+                                <p id="tt-name" class="font-bold text-accent mb-1.5 text-sm"></p>
+                                <p id="tt-temp" class="text-red-400 text-xs leading-5"></p>
+                                <p id="tt-aqi" class="text-yellow-400 text-xs leading-5"></p>
+                                <p id="tt-green" class="text-green-400 text-xs leading-5"></p>
+                                <p class="text-gray-500 text-xs mt-1">Click to load AI analysis</p>
+                            </div>
+                        </div><!-- /svg wrapper -->
+                    </div><!-- /heatmap panel -->
+
+                    <!-- ── Right: Metric Panel + Before/After ── -->
+                    <div class="flex flex-col gap-6">
+
+                        <!-- Dynamic State Info Panel -->
+                        <div class="glass-panel p-6" id="state-info-panel">
+                            <div class="flex items-center gap-3 mb-5">
+                                <div
+                                    class="w-2 h-10 rounded-full bg-gradient-to-b from-red-500 via-yellow-400 to-green-400">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs text-gray-500 uppercase tracking-widest">Selected Region</p>
+                                    <h3 class="text-xl font-bold text-white truncate" id="panel-state-name">↖ Hover a
+                                        state on the map</h3>
+                                </div>
+                                <div id="panel-heat-badge"
+                                    class="px-3 py-1 rounded-full text-xs font-bold hidden flex-shrink-0"></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="rounded-2xl p-4 text-center"
+                                    style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2)">
+                                    <p class="text-2xl font-bold text-red-400" id="panel-temp">--°C</p>
+                                    <p class="text-xs text-gray-400 mt-1">Temperature</p>
+                                </div>
+                                <div class="rounded-2xl p-4 text-center"
+                                    style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2)">
+                                    <p class="text-2xl font-bold text-yellow-400" id="panel-aqi">---</p>
+                                    <p class="text-xs text-gray-400 mt-1">AQI Index</p>
+                                </div>
+                                <div class="rounded-2xl p-4 text-center"
+                                    style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2)">
+                                    <p class="text-2xl font-bold text-green-400" id="panel-green">--%</p>
+                                    <p class="text-xs text-gray-400 mt-1">Green Cover</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Before vs After Panel -->
+                        <div class="glass-panel p-6">
+                            <h3 class="text-base font-bold text-white mb-1">🔄 AI Green Plan — Before vs After</h3>
+                            <p class="text-xs text-gray-400 mb-4">Projected impact after increasing green cover by <span
+                                    class="text-accent font-semibold" id="slider-pct">20%</span></p>
+                            <input type="range" min="10" max="60" value="20" id="green-slider" class="w-full mb-5"
+                                style="height:6px;cursor:pointer">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="rounded-2xl p-4"
+                                    style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2)">
+                                    <p class="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">⚠️ Before
+                                    </p>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">Temp</span><span class="text-red-400 font-bold"
+                                                id="ba-before-temp">34°C</span></div>
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">AQI</span><span class="text-red-400 font-bold"
+                                                id="ba-before-aqi">120</span></div>
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">Green</span><span class="text-red-400 font-bold"
+                                                id="ba-before-green">18%</span></div>
+                                    </div>
+                                </div>
+                                <div class="rounded-2xl p-4"
+                                    style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2)">
+                                    <p class="text-xs font-bold text-green-400 uppercase tracking-widest mb-3">✅ After
+                                        AI Plan</p>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">Temp</span><span class="text-green-400 font-bold"
+                                                id="ba-after-temp">29°C</span></div>
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">AQI</span><span class="text-green-400 font-bold"
+                                                id="ba-after-aqi">82</span></div>
+                                        <div class="flex justify-between text-sm"><span
+                                                class="text-gray-400">Green</span><span class="text-green-400 font-bold"
+                                                id="ba-after-green">38%</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /right panels -->
+                </div><!-- /top grid -->
+
+                <!-- ══ BOTTOM ROW: Horizontal AI Problem → Solution Flow ══ -->
+                <div class="glass-panel p-6 md:p-8">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse inline-block"></span>
+                        <h3 class="text-base font-bold text-white">🤖 AI Diagnostic Flow — Problem → Root Cause →
+                            Solution → Result</h3>
+                    </div>
+                    <!-- Horizontal Cards + Connector Arrows -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 items-stretch" id="flow-row">
+
+                        <!-- Card 1: Problem -->
+                        <div class="flow-h-card group relative" data-glow="#ef4444"
+                            style="--card-border:#ef4444;--card-bg:rgba(239,68,68,0.07)">
+                            <div class="flow-icon-wrap"
+                                style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.35)">
+                                <span class="flow-icon icon-fire">🔥</span>
+                            </div>
+                            <p class="text-xs font-bold text-red-400 uppercase tracking-widest mb-2 mt-3">Problem</p>
+                            <p class="text-sm text-gray-300 leading-relaxed" id="flow-problem">Mumbai metro heat &amp;
+                                air pollution</p>
+                            <!-- Arrow connector (hidden on mobile) -->
+                            <div class="flow-connector hidden lg:flex">→</div>
+                        </div>
+
+                        <!-- Card 2: Cause -->
+                        <div class="flow-h-card group relative" data-glow="#f59e0b"
+                            style="--card-border:#f59e0b;--card-bg:rgba(245,158,11,0.07)">
+                            <div class="flow-icon-wrap"
+                                style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.35)">
+                                <span class="flow-icon icon-smog">🌫</span>
+                            </div>
+                            <p class="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-2 mt-3">Root Cause
+                            </p>
+                            <p class="text-sm text-gray-300 leading-relaxed" id="flow-cause">Rapid concretization &amp;
+                                vehicle emissions</p>
+                            <div class="flow-connector hidden lg:flex">→</div>
+                        </div>
+
+                        <!-- Card 3: AI Solution -->
+                        <div class="flow-h-card group relative" data-glow="#6366f1"
+                            style="--card-border:#6366f1;--card-bg:rgba(99,102,241,0.07)">
+                            <div class="flow-icon-wrap"
+                                style="background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.35)">
+                                <span class="flow-icon icon-ai">🤖</span>
+                            </div>
+                            <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 mt-3">AI Solution
+                            </p>
+                            <p class="text-sm text-gray-300 leading-relaxed" id="flow-solution">Urban forest + green
+                                transport corridors</p>
+                            <div class="flow-connector hidden lg:flex">→</div>
+                        </div>
+
+                        <!-- Card 4: Result -->
+                        <div class="flow-h-card group relative" data-glow="#22c55e"
+                            style="--card-border:#22c55e;--card-bg:rgba(34,197,94,0.07)">
+                            <div class="flow-icon-wrap"
+                                style="background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.35)">
+                                <span class="flow-icon icon-leaf">🌿</span>
+                            </div>
+                            <p class="text-xs font-bold text-green-400 uppercase tracking-widest mb-2 mt-3">Projected
+                                Result</p>
+                            <p class="text-sm text-gray-300 leading-relaxed" id="flow-result">−5°C reduction · AQI
+                                improves 33%</p>
+                        </div>
+                    </div><!-- /flow-row -->
+                </div><!-- /AI flow panel -->
+
+            </div>
+        </section>
+
+        <!-- ══ STYLES ══ -->
+        <style>
+            /* ── State Paths ── */
+            .india-state {
+                fill: var(--heat-color);
+                fill-opacity: 0.52;
+                stroke: rgba(255, 255, 255, 0.18);
+                stroke-width: 0.8;
+                cursor: pointer;
+                transition: fill-opacity .3s ease, filter .3s ease;
+            }
+
+            .india-state:hover,
+            .india-state.is-active {
+                fill-opacity: 0.92;
+                filter: drop-shadow(0 0 8px var(--heat-color)) brightness(1.15);
+            }
+
+            /* Thermal "pulse" on active state */
+            .india-state.is-active {
+                animation: thermalPulse 2.4s ease-in-out infinite;
+            }
+
+            @keyframes thermalPulse {
+
+                0%,
+                100% {
+                    filter: drop-shadow(0 0 6px var(--heat-color));
+                }
+
+                50% {
+                    filter: drop-shadow(0 0 16px var(--heat-color)) brightness(1.2);
+                }
+            }
+
+            /* ── State Labels ── */
+            .state-label {
+                font-size: 7px;
+                fill: rgba(255, 255, 255, 0.75);
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
+                pointer-events: none;
+                text-anchor: middle;
+                dominant-baseline: middle;
+                letter-spacing: 0.3px;
+            }
+
+            /* ── Slider ── */
+            #green-slider {
+                -webkit-appearance: none;
+                appearance: none;
+                background: linear-gradient(to right, #22c55e 20%, rgba(255, 255, 255, 0.1) 20%);
+                border-radius: 99px;
+                height: 6px;
+                outline: none;
+            }
+
+            #green-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #22c55e;
+                box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+                cursor: pointer;
+            }
+
+            /* ── Metric update animation ── */
+            @keyframes countUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .metric-update {
+                animation: countUp 0.35s ease forwards;
+            }
+
+            /* ── Horizontal Flow Cards ── */
+            .flow-h-card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 20px;
+                padding: 20px 18px;
+                cursor: default;
+                transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .3s ease;
+                position: relative;
+                overflow: visible;
+            }
+
+            .flow-h-card:hover {
+                transform: translateY(-6px) scale(1.03);
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--card-border), 0 0 20px color-mix(in srgb, var(--card-border) 40%, transparent);
+            }
+
+            /* Flow card entry animation */
+            .flow-h-card {
+                animation: flowCardIn .5s ease both;
+            }
+
+            .flow-h-card:nth-child(1) {
+                animation-delay: 0s;
+            }
+
+            .flow-h-card:nth-child(2) {
+                animation-delay: .12s;
+            }
+
+            .flow-h-card:nth-child(3) {
+                animation-delay: .24s;
+            }
+
+            .flow-h-card:nth-child(4) {
+                animation-delay: .36s;
+            }
+
+            @keyframes flowCardIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(18px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .flow-card-refresh {
+                animation: flowCardIn .45s ease both !important;
+                animation-delay: 0s !important;
+            }
+
+            /* Icon wrapper circle */
+            .flow-icon-wrap {
+                width: 52px;
+                height: 52px;
+                border-radius: 50%;
+                border: 1px solid;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+            }
+
+            /* Per-icon animations */
+            .icon-fire {
+                animation: iconPulse 2s ease-in-out infinite;
+            }
+
+            .icon-smog {
+                animation: iconFade 3s ease-in-out infinite;
+            }
+
+            .icon-ai {
+                animation: iconSpin 6s linear infinite;
+            }
+
+            .icon-leaf {
+                animation: iconGrow 2.5s ease-in-out infinite;
+            }
+
+            @keyframes iconPulse {
+
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+
+                50% {
+                    transform: scale(1.2);
+                    filter: brightness(1.3);
+                }
+            }
+
+            @keyframes iconFade {
+
+                0%,
+                100% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0.5;
+                    transform: translateX(2px);
+                }
+            }
+
+            @keyframes iconSpin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @keyframes iconGrow {
+
+                0%,
+                100% {
+                    transform: scaleY(1) translateY(0);
+                }
+
+                50% {
+                    transform: scaleY(1.15) translateY(-2px);
+                    filter: brightness(1.2);
+                }
+            }
+
+            /* Connector arrow between flow cards (desktop only) */
+            .flow-connector {
+                position: absolute;
+                right: -14px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 28px;
+                align-items: center;
+                justify-content: center;
+                color: rgba(255, 255, 255, 0.2);
+                font-size: 20px;
+                z-index: 10;
+                animation: arrowPulse 2s ease-in-out infinite;
+            }
+
+            @keyframes arrowPulse {
+
+                0%,
+                100% {
+                    opacity: 0.2;
+                    transform: translateY(-50%) translateX(0);
+                }
+
+                50% {
+                    opacity: 0.7;
+                    transform: translateY(-50%) translateX(3px);
+                }
+            }
+        </style>
+
+        <!-- ══ SCRIPT ══ -->
+        <script>
+            /* ── State Data (all 21 + new states) ── */
+            const STATE_DATA = {
+                "Jammu & Kashmir": { temp: 18, aqi: 45, green: 55, heat: 'healthy', problem: 'Glacial retreat & ecosystem stress', cause: 'Climate warming & tourism pressure', solution: 'Alpine reforestation & glacier monitoring', result: 'Glacier melt rate −30% · Biodiversity maintained' },
+                "Ladakh": { temp: 12, aqi: 28, green: 20, heat: 'healthy', problem: 'Cold desert degradation', cause: 'Permafrost thaw & sparse vegetation', solution: 'Cold-zone agroforestry programs', result: 'Soil erosion −40% · Carbon stored +15%' },
+                "Himachal Pradesh": { temp: 22, aqi: 38, green: 60, heat: 'healthy', problem: 'Forest fires & glacial melt', cause: 'Tourism pressure & deforestation', solution: 'Eco-tourism guidelines + alpine reforestation', result: 'Fire incidents −45% · Forest cover +8%' },
+                "Punjab": { temp: 35, aqi: 105, green: 14, heat: 'moderate', problem: 'Agricultural heat & stubble burning', cause: 'Biomass burning & low urban green space', solution: 'Agroforestry corridors & crop-residue AI routing', result: '−3°C heat reduction · AQI improves 28%' },
+                "Haryana": { temp: 37, aqi: 118, green: 12, heat: 'moderate', problem: 'Rapid industrial urbanization', cause: 'High impervious surfaces & low vegetation', solution: 'Urban green belts & rooftop gardens', result: '−4°C heat reduction · AQI improves 25%' },
+                "Delhi": { temp: 41, aqi: 178, green: 10, heat: 'critical', problem: 'Severe air-quality & heat emergency', cause: 'Dense urbanization & traffic emissions', solution: 'Metro-corridor tree planting & green roofs', result: '−5°C reduction · AQI falls below 120' },
+                "Uttarakhand": { temp: 24, aqi: 42, green: 55, heat: 'healthy', problem: 'Forest fires & glacial melt', cause: 'Climate warming + dry spells', solution: 'AI fire-prediction + reforestation', result: 'Fire incidents −45% · Forest cover +8%' },
+                "Uttar Pradesh": { temp: 38, aqi: 136, green: 13, heat: 'critical', problem: 'Densely populated heat corridor', cause: 'Deforestation & industrial growth', solution: 'River-bank plantation & urban parks expansion', result: '−4°C reduction · AQI improves 30%' },
+                "Rajasthan": { temp: 42, aqi: 145, green: 8, heat: 'critical', problem: 'Extreme desert heat & urban sprawl', cause: '<5% green cover, high albedo surfaces', solution: 'Strategic desert-edge afforestation & solar shading', result: '−6°C peak reduction · AQI drops to 95' },
+                "Bihar": { temp: 36, aqi: 110, green: 16, heat: 'moderate', problem: 'Seasonal heat waves', cause: 'Low tree density & poor water management', solution: 'Social forestry programs along highways', result: '−3°C reduction · AQI improves 20%' },
+                "Jharkhand": { temp: 33, aqi: 95, green: 33, heat: 'moderate', problem: 'Mining-zone heat degradation', cause: 'Deforestation from mining activities', solution: 'Mine-site revegetation & biodiversity corridors', result: '−2°C reduction · Ecosystem restored' },
+                "West Bengal": { temp: 31, aqi: 88, green: 28, heat: 'healthy', problem: 'Coastal humidity & urban flooding', cause: 'Mangrove loss & urban encroachment', solution: 'Mangrove restoration & blue-green infrastructure', result: 'Flood risk −40% · Air quality stable' },
+                "Northeast India": { temp: 26, aqi: 48, green: 62, heat: 'healthy', problem: 'Jhum cultivation deforestation', cause: 'Slash-and-burn farming practices', solution: 'Sustainable agroforestry transition', result: 'Forest cover restored · AQI excellent' },
+                "Sikkim": { temp: 18, aqi: 30, green: 70, heat: 'healthy', problem: 'Alpine deforestation risk', cause: 'Hydropower construction & landslides', solution: 'Slope stabilisation + native tree planting', result: 'Landslide risk −50% · Biodiversity +20%' },
+                "Odisha": { temp: 32, aqi: 80, green: 35, heat: 'healthy', problem: 'Cyclone-related vegetation loss', cause: 'Coastal storms stripping green cover', solution: 'Mangrove + casuarina coastal shield planting', result: 'Storm resilience +60% · AQI stable' },
+                "Madhya Pradesh": { temp: 37, aqi: 112, green: 26, heat: 'moderate', problem: 'Forest-fringe urban heat', cause: 'Encroachment on forest buffer zones', solution: 'Forest boundary enforcement + rewilding', result: '−3°C reduction · Biodiversity +25%' },
+                "Gujarat": { temp: 40, aqi: 130, green: 9, heat: 'critical', problem: 'Coastal industrial heat islands', cause: 'Heavy industry & low green infrastructure', solution: 'Industrial greenbelt mandate + mangrove shields', result: '−4°C reduction · AQI improves 32%' },
+                "Chhattisgarh": { temp: 31, aqi: 72, green: 44, heat: 'healthy', problem: 'Mining deforestation risk', cause: 'Coal belt forest pressure', solution: 'Mining reclamation laws + reforestation bonds', result: 'Forest cover maintained · AQI stable' },
+                "Maharashtra": { temp: 34, aqi: 122, green: 18, heat: 'critical', problem: 'Mumbai metro heat & air pollution', cause: 'Rapid concretization & vehicle emissions', solution: 'Urban forest + green transport corridors', result: '−5°C reduction · AQI improves 33%' },
+                "Telangana": { temp: 35, aqi: 108, green: 20, heat: 'moderate', problem: 'Hyderabad tech-zone heat island', cause: 'IT corridor rapid concretization', solution: 'Campus green roofs + Hussain Sagar restoration', result: '−4°C reduction · AQI improves 26%' },
+                "Goa": { temp: 29, aqi: 62, green: 42, heat: 'healthy', problem: 'Coastal mining & tourism stress', cause: 'Land-use change & coastal erosion', solution: 'Coastal eco-corridor + mining ban zones', result: 'Biodiversity +30% · Coastal health restored' },
+                "Andhra Pradesh": { temp: 33, aqi: 90, green: 23, heat: 'moderate', problem: 'Coastal & interior heat disparity', cause: 'Uneven urban development', solution: 'Integrated green masterplan per zone', result: '−3°C reduction · AQI improves 22%' },
+                "Karnataka": { temp: 30, aqi: 75, green: 38, heat: 'healthy', problem: 'Bangalore urban island warming', cause: 'Lake encroachment & deforestation', solution: 'Lake restoration + Western Ghats buffer zone', result: '−2°C reduction · Lake count +15%' },
+                "Tamil Nadu": { temp: 33, aqi: 92, green: 20, heat: 'moderate', problem: 'Chennai heat & drought cycles', cause: 'Low green cover + poor water retention', solution: 'Water-sensitive urban design + tree planting', result: '−3°C reduction · Water security +30%' },
+                "Kerala": { temp: 28, aqi: 55, green: 52, heat: 'healthy', problem: 'Seasonal flooding & landslides', cause: 'Deforestation in Western Ghats', solution: 'Eco-sensitive zone restoration + slope planting', result: 'Landslide risk −35% · AQI excellent' },
+                "Andaman & Nicobar": { temp: 28, aqi: 32, green: 75, heat: 'healthy', problem: 'Coral reef bleaching', cause: 'Ocean warming & coastal development', solution: 'Marine Protected Area expansion', result: 'Reef restoration +40% · Biodiversity stable' },
+            };
+
+            const HEAT_META = {
+                critical: { label: '🔴 Critical Heat', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.5)', cls: 'text-red-400' },
+                moderate: { label: '🟡 Moderate Heat', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.5)', cls: 'text-yellow-400' },
+                healthy: { label: '🟢 Healthy Zone', bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.5)', cls: 'text-green-400' },
+            };
+
+            let currentData = STATE_DATA['Maharashtra'];
+
+            /* ── Animate value ── */
+            function animateValue(el, val, suffix) {
+                el.classList.remove('metric-update');
+                void el.offsetWidth;
+                el.textContent = val + suffix;
+                el.classList.add('metric-update');
+            }
+
+            /* ── Update Before/After ── */
+            function updateAfter(data, pct) {
+                const tAfter = Math.max(18, (data.temp - data.temp * 0.12 * (pct / 20)).toFixed(1));
+                const aAfter = Math.max(30, Math.round(data.aqi - data.aqi * 0.30 * (pct / 20)));
+                const gAfter = Math.min(90, Math.round(data.green + pct));
+                document.getElementById('ba-after-temp').textContent = tAfter + '°C';
+                document.getElementById('ba-after-aqi').textContent = aAfter;
+                document.getElementById('ba-after-green').textContent = gAfter + '%';
+            }
+
+            /* ── Update all panels ── */
+            function updatePanels(name, data) {
+                currentData = data;
+                const hm = HEAT_META[data.heat];
+                const slv = parseInt(document.getElementById('green-slider').value);
+
+                animateValue(document.getElementById('panel-temp'), data.temp, '°C');
+                animateValue(document.getElementById('panel-aqi'), data.aqi, '');
+                animateValue(document.getElementById('panel-green'), data.green, '%');
+                document.getElementById('panel-state-name').textContent = name;
+
+                const badge = document.getElementById('panel-heat-badge');
+                badge.textContent = hm.label;
+                badge.style.cssText = `background:${hm.bg};border:1px solid ${hm.border}`;
+                badge.className = `px-3 py-1 rounded-full text-xs font-bold ${hm.cls}`;
+
+                document.getElementById('ba-before-temp').textContent = data.temp + '°C';
+                document.getElementById('ba-before-aqi').textContent = data.aqi;
+                document.getElementById('ba-before-green').textContent = data.green + '%';
+                updateAfter(data, slv);
+
+                /* Refresh flow cards with animation */
+                ['problem', 'cause', 'solution', 'result'].forEach((k, i) => {
+                    const el = document.getElementById('flow-' + k);
+                    el.textContent = data[k];
+                    const card = el.closest('.flow-h-card');
+                    card.classList.remove('flow-card-refresh');
+                    void card.offsetWidth;
+                    card.classList.add('flow-card-refresh');
+                });
+            }
+
+            /* ── Slider ── */
+            const gSlider = document.getElementById('green-slider');
+            function updateSliderTrack() {
+                const pct = ((gSlider.value - 10) / 50 * 100).toFixed(1);
+                gSlider.style.background = `linear-gradient(to right,#22c55e 0%,#22c55e ${pct}%,rgba(255,255,255,0.1) ${pct}%)`;
+            }
+            gSlider.addEventListener('input', () => {
+                document.getElementById('slider-pct').textContent = gSlider.value + '%';
+                updateSliderTrack();
+                if (currentData) updateAfter(currentData, parseInt(gSlider.value));
+            });
+            updateSliderTrack();
+
+            /* ── Tooltip ── */
+            const tooltip = document.getElementById('state-tooltip');
+            const heatmapEl = document.getElementById('heatmap-container');
+
+            document.querySelectorAll('.india-state').forEach(path => {
+                const name = path.dataset.state;
+                const data = STATE_DATA[name];
+                if (!data) return;
+
+                path.addEventListener('mouseenter', () => {
+                    document.getElementById('tt-name').textContent = '📍 ' + name;
+                    document.getElementById('tt-temp').textContent = '🌡 Temperature: ' + data.temp + '°C';
+                    document.getElementById('tt-aqi').textContent = '🌫 AQI: ' + data.aqi;
+                    document.getElementById('tt-green').textContent = '🌿 Green Cover: ' + data.green + '%';
+                    tooltip.classList.remove('hidden');
+                });
+
+                path.addEventListener('mousemove', e => {
+                    const r = heatmapEl.getBoundingClientRect();
+                    let x = e.clientX - r.left + 14;
+                    let y = e.clientY - r.top + 14;
+                    if (x + 210 > r.width) x = e.clientX - r.left - 210;
+                    if (y + 120 > r.height) y = e.clientY - r.top - 120;
+                    tooltip.style.left = x + 'px';
+                    tooltip.style.top = y + 'px';
+                });
+
+                path.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+
+                path.addEventListener('click', () => {
+                    document.querySelectorAll('.india-state.is-active').forEach(p => p.classList.remove('is-active'));
+                    path.classList.add('is-active');
+                    updatePanels(name, data);
+                });
+            });
+
+            /* ── Boot with Maharashtra ── */
+            function bootDefault() {
+                updatePanels('Maharashtra', STATE_DATA['Maharashtra']);
+                const mh = document.querySelector('[data-state="Maharashtra"]');
+                if (mh) mh.classList.add('is-active');
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bootDefault);
+            } else {
+                bootDefault();
+            }
+        </script>
+
+
+
+
+
+        <!-- SECTION 3: HOW IT WORKS -->
+        <section id="how-it-works" class="full-width-section py-32 text-center overflow-hidden">
+            <div class="container-frame">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-24 tracking-tight">Four Steps to a Cooler City</h2>
+                <div class="relative max-w-5xl mx-auto">
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+                        <div
+                            class="step-item flex flex-col items-center p-6 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 hover-lift group">
+                            <div
+                                class="step-icon bg-secondary/10 text-secondary dark:bg-accent/10 dark:text-accent text-3xl font-bold rounded-full w-20 h-20 flex items-center justify-center mb-6 shadow-inner ring-4 ring-white dark:ring-gray-800 group-hover:bg-secondary group-hover:text-white transition-all duration-300">
+                                1</div>
+                            <h3 class="text-xl font-bold mb-3">Upload Satellite Data</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Start by providing recent satellite or
+                                drone imagery of the urban area.</p>
+                        </div>
+                        <div
+                            class="step-item flex flex-col items-center p-6 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 hover-lift group">
+                            <div
+                                class="step-icon bg-secondary/10 text-secondary dark:bg-accent/10 dark:text-accent text-3xl font-bold rounded-full w-20 h-20 flex items-center justify-center mb-6 shadow-inner ring-4 ring-white dark:ring-gray-800 group-hover:bg-secondary group-hover:text-white transition-all duration-300">
+                                2</div>
+                            <h3 class="text-xl font-bold mb-3">AI Heat Detection</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Our machine learning models identify and
+                                map urban heat islands.</p>
+                        </div>
+                        <div
+                            class="step-item flex flex-col items-center p-6 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 hover-lift group">
+                            <div
+                                class="step-icon bg-secondary/10 text-secondary dark:bg-accent/10 dark:text-accent text-3xl font-bold rounded-full w-20 h-20 flex items-center justify-center mb-6 shadow-inner ring-4 ring-white dark:ring-gray-800 group-hover:bg-secondary group-hover:text-white transition-all duration-300">
+                                3</div>
+                            <h3 class="text-xl font-bold mb-3">Optimization Algorithm</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">The platform recommends effective
+                                locations for new green spaces.</p>
+                        </div>
+                        <div
+                            class="step-item flex flex-col items-center p-6 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 hover-lift group">
+                            <div
+                                class="step-icon bg-secondary/10 text-secondary dark:bg-accent/10 dark:text-accent text-3xl font-bold rounded-full w-20 h-20 flex items-center justify-center mb-6 shadow-inner ring-4 ring-white dark:ring-gray-800 group-hover:bg-secondary group-hover:text-white transition-all duration-300">
+                                4</div>
+                            <h3 class="text-xl font-bold mb-3">Plantation Map</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Receive a detailed map with prioritized
+                                zones for tree planting.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: LIVE MAP ANALYSIS -->
+        <section id="live-analysis" class="full-width-section py-32">
+            <div class="container-frame">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-16 text-center tracking-tight">Live GIS Analysis
+                    Dashboard</h2>
+
+                <div class="dashboard-card glass-panel relative overflow-hidden">
+                    <!-- Left Column: Map -->
+                    <div class="dashboard-map-container relative z-10">
+
+                        <!-- 🔥 NEW CONTROLS (ADDED) -->
+                        <div class="glass-panel p-4 rounded-2xl mb-4">
+
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">
+                                Select State
+                            </label>
+
+                            <select id="stateSelector"
+                                class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Punjab">Punjab</option>
+                            </select>
+
+                            <label class="block text-sm font-semibold mt-4 mb-2 text-gray-300">
+                                Select Layer
+                            </label>
+
+                            <select id="layerSelector"
+                                class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                                <option value="Temperature">Temperature</option>
+                                <option value="NDVI">NDVI</option>
+                                <option value="Heat">Heat</option>
+                                <option value="Prediction">Prediction</option>
+                            </select>
+
+                        </div>
+
+                        <!-- EXISTING CODE (UNCHANGED) -->
+                        <div class="map-skeleton" id="map-skeleton">
+                            <span
+                                class="text-primary/40 dark:text-accent/40 font-bold tracking-widest text-xs uppercase">
+                                Initializing GIS Engine...
+                            </span>
+                        </div>
+
+                        <div id="map" class="h-full w-full z-10 rounded-2xl"></div>
+
+                    </div>
+
+                    <!-- Right Column: Controls -->
+                    <div class="space-y-8 relative z-10">
+                        <div class="p-6 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-white/20">
+                            <h3 class="text-xl font-bold mb-6">Zone Priority Ranking</h3>
+                            <div class="space-y-4">
+                                <button
+                                    class="w-full text-left p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-800 dark:text-red-300 font-bold hover:bg-red-500/20 transition-all flex justify-between items-center">
+                                    <span>Zone A: High Priority</span>
+                                    <span class="text-xs bg-red-500 text-white px-2 py-1 rounded">Critical</span>
+                                </button>
+                                <button
+                                    class="w-full text-left p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-800 dark:text-orange-300 font-bold hover:bg-orange-500/20 transition-all">Zone
+                                    B: Medium Priority</button>
+                                <button
+                                    class="w-full text-left p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-800 dark:text-yellow-300 font-bold hover:bg-yellow-500/20 transition-all">Zone
+                                    C: Low Priority</button>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-white/20">
+                            <h4 class="text-lg font-bold mb-6">Interactive Layers</h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Heatmap Overlay</span>
+                                    <input type="checkbox" id="heatmap-toggle" class="toggle-checkbox" checked>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Vegetation Layer</span>
+                                    <input type="checkbox" id="vegetation-toggle" class="toggle-checkbox">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Air Quality Layer</span>
+                                    <input type="checkbox" id="air-quality-toggle" class="toggle-checkbox">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: AI RECOMMENDATIONS -->
+        <section id="ai-recommendations" class="full-width-section py-32 text-center">
+            <div class="container-frame">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-16 tracking-tight">AI-Powered Green Infrastructure
+                    Recommendations</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="recommendation-card p-10 glass-panel hover-lift group">
+                        <div class="text-4xl mb-6 transform group-hover:scale-125 transition-transform duration-300">🌳
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-primary dark:text-accent">Suggested Trees</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Native, drought-resistant trees like Oak and
+                            Maple for maximum cooling effect and biodiversity.</p>
+                    </div>
+                    <div class="recommendation-card p-10 glass-panel hover-lift group">
+                        <div class="text-4xl mb-6 transform group-hover:scale-125 transition-transform duration-300">🌿
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-primary dark:text-accent">Recommended Grass</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Hardy perennial grasses such as Fescue and
+                            Bermuda to contribute to ground cooling.</p>
+                    </div>
+                    <div class="recommendation-card p-10 glass-panel hover-lift group">
+                        <div class="text-4xl mb-6 transform group-hover:scale-125 transition-transform duration-300">🎋
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-primary dark:text-accent">Shrub Density</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Low-lying shrubs ideal for reducing soil
+                            temperature and preventing erosion.</p>
+                    </div>
+                    <div class="recommendation-card p-10 glass-panel hover-lift group">
+                        <div class="text-4xl mb-6 transform group-hover:scale-125 transition-transform duration-300">💧
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-primary dark:text-accent">Water Retention</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Bioswales and permeable pavements to manage
+                            stormwater runoff and replenish groundwater.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: IMPACT SIMULATION -->
+        <section id="impact-simulation" class="full-width-section py-32">
+            <div class="container-frame">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-6 text-center tracking-tight">Simulate Your Impact
+                </h2>
+                <p class="max-w-2xl mx-auto text-center mb-16 text-gray-500 dark:text-gray-400">Use the slider to see
+                    how increasing green space density can positively affect your city's environment.</p>
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div class="glass-panel p-10">
+                        <div class="mb-12">
+                            <div class="flex justify-between items-end mb-6">
+                                <label for="plantation-slider" class="text-xl font-bold">Plantation Density</label>
+                                <span class="text-primary dark:text-accent font-bold text-2xl"
+                                    id="slider-value">20%</span>
+                            </div>
+                            <input id="plantation-slider" type="range" min="0" max="100" value="20"
+                                class="w-full h-3 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="grid grid-cols-3 gap-6 text-center">
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-gray-400 mb-2">Avg. Temp</p>
+                                <p id="sim-temp" class="text-3xl font-bold text-primary dark:text-accent">25.1°C</p>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-gray-400 mb-2">AQI Index</p>
+                                <p id="sim-aqi" class="text-3xl font-bold text-primary dark:text-accent">85</p>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-gray-400 mb-2">Comfort</p>
+                                <p id="sim-comfort" class="text-3xl font-bold text-primary dark:text-accent">7/10</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-8">
+                        <canvas id="impact-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: TECHNOLOGY STACK -->
+        <section id="tech-stack" class="full-width-section py-32 text-center overflow-hidden">
+            <div class="container-frame">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-20 tracking-tight">Powered by Cutting-Edge Technology
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-12">
+                    <div class="tech-card flex flex-col items-center group">
+                        <div
+                            class="w-24 h-24 glass-panel flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                            🗺️</div>
+                        <h3 class="text-lg font-bold">GIS Data</h3>
+                    </div>
+                    <div class="tech-card flex flex-col items-center group">
+                        <div
+                            class="w-24 h-24 glass-panel flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                            🧠</div>
+                        <h3 class="text-lg font-bold">Machine Learning</h3>
+                    </div>
+                    <div class="tech-card flex flex-col items-center group">
+                        <div
+                            class="w-24 h-24 glass-panel flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                            🛰️</div>
+                        <h3 class="text-lg font-bold">Satellite Imaging</h3>
+                    </div>
+                    <div class="tech-card flex flex-col items-center group">
+                        <div
+                            class="w-24 h-24 glass-panel flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                            ⚙️</div>
+                        <h3 class="text-lg font-bold">Algorithms</h3>
+                    </div>
+                    <div class="tech-card flex flex-col items-center group">
+                        <div
+                            class="w-24 h-24 glass-panel flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                            🌳</div>
+                        <h3 class="text-lg font-bold">Modeling</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 8: ABOUT PROJECT -->
+        <section id="about" class="full-width-section py-32 bg-primary text-white relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10 hero-grid"></div>
+            <div class="container-frame relative z-10 text-center">
+                <h2 class="text-4xl md:text-5xl font-inter-bold mb-12 tracking-tight">Data-Driven Planning for a
+                    Sustainable Future</h2>
+                <p class="text-xl leading-relaxed max-w-4xl mx-auto font-light text-gray-100">
+                    Urban Heat Islands (UHI) are a critical consequence of climate change and rapid urbanization.
+                    Concrete jungles trap heat, leading to increased energy consumption and health risks. <span
+                        class="font-bold text-accent">GreenScape AI</span> tackles this challenge head-on. By leveraging
+                    high-resolution satellite imagery and advanced machine learning, we provide city planners with the
+                    precise data they need to make strategic decisions.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 9: FOOTER (Full-width) -->
+        <footer class="bg-background-dark text-white py-24 border-t border-white/5">
+            <div class="container-frame">
+                <div class="grid md:grid-cols-4 gap-12 mb-16 text-left">
+                    <div class="md:col-span-2">
+                        <p class="text-3xl font-bold text-accent mb-6 tracking-tighter">GreenScape AI</p>
+                        <p class="text-gray-400 max-w-sm leading-relaxed">Pioneering the future of urban environmental
+                            resilience through GIS and AI. Building cooler, greener cities for everyone.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-6 text-sm uppercase tracking-widest text-gray-500">Platform</h4>
+                        <ul class="space-y-4 text-gray-400">
+                            <li><a href="#live-analysis" class="hover:text-accent transition-colors">Live Dashboard</a>
+                            </li>
+                            <li><a href="dashboard.html" class="hover:text-accent transition-colors">Analytics</a></li>
+                            <li><a href="#how-it-works" class="hover:text-accent transition-colors">Methodology</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-6 text-sm uppercase tracking-widest text-gray-500">Company</h4>
+                        <ul class="space-y-4 text-gray-400">
+                            <li><a href="#" class="hover:text-accent transition-colors">Documentation</a></li>
+                            <li><a href="#" class="hover:text-accent transition-colors">GitHub</a></li>
+                            <li><a href="#" class="hover:text-accent transition-colors">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div
+                    class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
+                    <p>&copy; 2026 GreenScape AI. All Rights Reserved.</p>
+                    <div class="flex space-x-8 mt-6 md:mt-0">
+                        <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                        <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Global Background Script (particles + leaves) -->
+    <script src="assets/js/background.js"></script>
+
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/animations.js"></script>
+    <script src="assets/js/map.js"></script>
+    <script src="assets/js/charts.js"></script>
+</body>
+
+</html>
